@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(./bin/Debug/MHAPalletizing.exe)",
+      "Bash(timeout 5 ./bin/Debug/MHAPalletizing.exe:*)",
+      "Bash(timeout 10 ./bin/Debug/MHAPalletizing.exe:*)",
+      "Bash(output.txt)",
+      "Bash(cat:*)",
+      "Bash(timeout 20 ./bin/Debug/MHAPalletizing.exe:*)",
+      "Bash(echo:*)",
+      "Bash(timeout 30 ./bin/Debug/MHAPalletizing.exe:*)",
+      "Bash(timeout 60:*)",
+      "Bash(timeout 120 ./bin/Debug/MHAPalletizing.exe:*)",
+      "Bash(timeout 180:*)",
+      "Bash(timeout 240 ./bin/Debug/MHAPalletizing.exe:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
