@@ -99,11 +99,9 @@ namespace MHAPalletizing.Phase1
                 layers.Add(layer);
                 layerId++;
 
-                // 사용된 아이템 제거
-                foreach (var item in layer.Items)
-                {
-                    remainingItems.Remove(item);
-                }
+                // 사용된 아이템 제거 (최적화: RemoveAll 사용)
+                var layerItemIds = new HashSet<int>(layer.Items.Select(i => i.ItemId));
+                remainingItems.RemoveAll(item => layerItemIds.Contains(item.ItemId));
             }
 
             return layers;
@@ -160,10 +158,9 @@ namespace MHAPalletizing.Phase1
                 layers.Add(layer);
                 layerId++;
 
-                foreach (var item in layer.Items)
-                {
-                    remainingItems.Remove(item);
-                }
+                // 최적화: HashSet으로 O(n) 제거
+                var layerItemIds = new HashSet<int>(layer.Items.Select(i => i.ItemId));
+                remainingItems.RemoveAll(item => layerItemIds.Contains(item.ItemId));
             }
 
             return layers;
@@ -202,10 +199,9 @@ namespace MHAPalletizing.Phase1
                 layers.Add(layer);
                 layerId++;
 
-                foreach (var item in layer.Items)
-                {
-                    remainingItems.Remove(item);
-                }
+                // 최적화: HashSet으로 O(n) 제거
+                var layerItemIds = new HashSet<int>(layer.Items.Select(i => i.ItemId));
+                remainingItems.RemoveAll(item => layerItemIds.Contains(item.ItemId));
             }
 
             return layers;

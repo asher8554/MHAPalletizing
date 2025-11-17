@@ -1,5 +1,6 @@
-﻿using System;
-using MHAPalletizing.Tests;
+﻿using MHAPalletizing.Tests;
+using System;
+using System.Text;
 
 namespace MHAPalletizing
 {
@@ -7,6 +8,10 @@ namespace MHAPalletizing
     {
         static void Main(string[] args)
         {
+            // UTF-8 인코딩 설정 (한글 출력 문제 해결)
+            Console.OutputEncoding = Encoding.UTF8;
+            Console.InputEncoding = Encoding.UTF8;
+
             Console.WriteLine("╔════════════════════════════════════════════════╗");
             Console.WriteLine("║   MHA Palletizing Algorithm Implementation    ║");
             Console.WriteLine("║   Multi-Heuristic 3D Bin Packing Problem      ║");
@@ -19,7 +24,7 @@ namespace MHAPalletizing
                 // 아래 주석을 해제하여 원하는 테스트를 실행하세요
 
                 // Dataset10 병렬 처리 (권장) ⚡
-                DatasetTests.RunDatasetTestsParallel(maxThreads: 4);
+                DatasetTests.RunDatasetTestsParallel(maxThreads: 10);
 
                 // 다른 테스트 옵션들:
                 // BasicTests.RunAllTests();                                          // 기본 테스트

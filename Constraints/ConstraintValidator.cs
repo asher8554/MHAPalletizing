@@ -44,11 +44,14 @@ namespace MHAPalletizing.Constraints
         private static bool AreColliding(Item a, Item b)
         {
             // AABB (Axis-Aligned Bounding Box) 충돌 검사
-            bool xOverlap = a.MinX < b.MaxX - EPSILON && a.MaxX > b.MinX + EPSILON;
-            bool yOverlap = a.MinY < b.MaxY - EPSILON && a.MaxY > b.MinY + EPSILON;
-            bool zOverlap = a.MinZ < b.MaxZ - EPSILON && a.MaxZ > b.MinZ + EPSILON;
+            // 최적화: 조기 종료 - 한 축이라도 겹치지 않으면 즉시 false 반환
+            if (!(a.MinX < b.MaxX - EPSILON && a.MaxX > b.MinX + EPSILON))
+                return false;
 
-            return xOverlap && yOverlap && zOverlap;
+            if (!(a.MinY < b.MaxY - EPSILON && a.MaxY > b.MinY + EPSILON))
+                return false;
+
+            return a.MinZ < b.MaxZ - EPSILON && a.MaxZ > b.MinZ + EPSILON;
         }
         #endregion
 
@@ -83,14 +86,23 @@ namespace MHAPalletizing.Constraints
         /// </summary>
         public static bool ValidateSupport(Item item, Pallet pallet, double vertexInset = 10)
         {
-            // 바닥에 있는 경우 항상 지지됨
+            // 바닥에 있는 경우 항상 지지됨 (조기 종료)
             if (item.Z < EPSILON)
                 return true;
 
-            var itemsBelow = pallet.Items.Where(other =>
-                Math.Abs(item.Z - other.MaxZ) < EPSILON).ToList();
+            // 최적화: LINQ 대신 foreach로 itemsBelow 직접 수집
+            List<Item> itemsBelow = null;
+            foreach (var other in pallet.Items)
+            {
+                if (Math.Abs(item.Z - other.MaxZ) < EPSILON)
+                {
+                    if (itemsBelow == null)
+                        itemsBelow = new List<Item>();
+                    itemsBelow.Add(other);
+                }
+            }
 
-            if (!itemsBelow.Any())
+            if (itemsBelow == null || itemsBelow.Count == 0)
                 return false; // 공중에 떠 있음
 
             // 지지 면적 계산
@@ -98,15 +110,29 @@ namespace MHAPalletizing.Constraints
             double supportedArea = CalculateSupportedArea(item, itemsBelow);
             double supportRatio = supportedArea / baseArea;
 
-            // 지지된 꼭지점 수 계산
-            int supportedVertices = CountSupportedVertices(item, itemsBelow, vertexInset);
+            // 최적화: 가장 쉬운 조건 먼저 체크 (조기 종료)
+            // 75% 지지 + 2개 꼭지점이 가장 일반적이므로 먼저 체크
+            if (supportRatio >= 0.75)
+            {
+                int vertices = CountSupportedVertices(item, itemsBelow, vertexInset);
+                if (vertices >= 2) return true;
+            }
 
-            // 논문의 3가지 조건 중 하나 만족
-            bool condition1 = supportRatio >= 0.40 && supportedVertices >= 4;
-            bool condition2 = supportRatio >= 0.50 && supportedVertices >= 3;
-            bool condition3 = supportRatio >= 0.75 && supportedVertices >= 2;
+            // 50% + 3 vertices
+            if (supportRatio >= 0.50)
+            {
+                int vertices = CountSupportedVertices(item, itemsBelow, vertexInset);
+                if (vertices >= 3) return true;
+            }
 
-            return condition1 || condition2 || condition3;
+            // 40% + 4 vertices (가장 엄격한 조건)
+            if (supportRatio >= 0.40)
+            {
+                int vertices = CountSupportedVertices(item, itemsBelow, vertexInset);
+                return vertices >= 4;
+            }
+
+            return false;
         }
 
         private static double CalculateSupportedArea(Item item, List<Item> itemsBelow)

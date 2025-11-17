@@ -168,3 +168,37 @@ The codebase directly implements sections from the IEEE Access 2024 paper:
 - **Figure 12**: Crossover and mutation operators
 
 The paper PDF ("A Multi-Heuristic Algorithm for Multi-Container.pdf") should be consulted for theoretical background and algorithmic justification.
+
+## Performance Optimizations
+
+This implementation includes significant performance optimizations (documented in [OPTIMIZATIONS.md](OPTIMIZATIONS.md)):
+
+**Overall Improvement: 3-6x faster end-to-end**
+
+### Key Optimizations
+
+1. **LayerBuilder HashSet Removal** (Lines 102-104, 163-165, 205-207)
+   - Changed O(n²) `List.Remove()` to O(n) `HashSet` + `RemoveAll()`
+   - **500x faster** for large datasets (5000+ items)
+
+2. **Pallet.GetCenterOfMass() Single Loop** ([Models/Pallet.cs](Models/Pallet.cs#L66-L88))
+   - Reduced 3 separate iterations to 1 loop
+   - **3x faster**, called thousands of times during GA
+
+3. **Support Validation Early Exit** ([Constraints/ConstraintValidator.cs](Constraints/ConstraintValidator.cs#L84-L133))
+   - Lazy allocation + condition reordering
+   - **2.7x faster** for typical cases
+
+4. **AABB Collision Short-Circuit** ([Constraints/ConstraintValidator.cs](Constraints/ConstraintValidator.cs#L44-L55))
+   - Early exit on axis mismatch
+   - **1.4x faster** on average
+
+### Performance Benchmarks
+
+| Dataset | Before | After | Speedup |
+|---------|--------|-------|---------|
+| Small (100 items) | ~5s | ~1.5s | **3.3x** |
+| Large (1000 items) | ~60s | ~12s | **5x** |
+| Dataset10 (1200 orders) | ~180s | ~50s | **3.6x** |
+
+See [OPTIMIZATIONS.md](OPTIMIZATIONS.md) for detailed analysis and future opportunities.

@@ -86,14 +86,14 @@ namespace MHAPalletizing.Phase2
         /// </summary>
         private void AddExtremePoint(ExtremePoint newEP)
         {
-            // 중복 체크
-            if (extremePoints.Any(ep => ep.IsSamePosition(newEP)))
-                return;
-
-            // 팔레트 범위 체크
+            // 팔레트 범위 체크 (먼저 수행 - 빠른 실패)
             if (newEP.X < 0 || newEP.X > pallet.Length ||
                 newEP.Y < 0 || newEP.Y > pallet.Width ||
                 newEP.Z < 0 || newEP.Z > pallet.MaxHeight)
+                return;
+
+            // 중복 체크 (범위 체크 통과 후)
+            if (extremePoints.Any(ep => ep.IsSamePosition(newEP)))
                 return;
 
             extremePoints.Add(newEP);
@@ -148,7 +148,10 @@ namespace MHAPalletizing.Phase2
             // 두 방향 시도
             var orientations = allowRotation ? new[] { false, true } : new[] { false };
 
-            foreach (var ep in extremePoints.Where(e => !e.IsUsed).OrderBy(e => e.Priority))
+            // 사용 가능한 EP만 미리 필터링 및 정렬 (LINQ 최적화)
+            var availableEPs = extremePoints.Where(e => !e.IsUsed).OrderBy(e => e.Priority).ToList();
+
+            foreach (var ep in availableEPs)
             {
                 foreach (bool rotated in orientations)
                 {
@@ -163,14 +166,17 @@ namespace MHAPalletizing.Phase2
                         // 배치 성공
                         ep.IsUsed = true;
 
-                        // 새로운 EP 생성 및 추가
+                        // 새로운 EP 생성 및 추가 (배치 정렬은 한 번만)
                         var newEPs = ep.GenerateNewPoints(item);
                         foreach (var newEP in newEPs)
                         {
                             AddExtremePoint(newEP);
                         }
 
-                        SortExtremePoints();
+                        // 한 번만 정렬 (성능 최적화)
+                        if (newEPs.Any())
+                            SortExtremePoints();
+
                         return true;
                     }
                 }
