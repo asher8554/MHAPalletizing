@@ -12,7 +12,9 @@
       "Bash(find:*)",
       "Bash(dotnet build:*)",
       "Bash(timeout 30 ./bin/Debug/MHAPalletizing.exe:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(taskkill:*)",
+      "Bash(timeout 60 ./bin/Debug/MHAPalletizing.exe:*)"
     ],
     "deny": [],
     "ask": []

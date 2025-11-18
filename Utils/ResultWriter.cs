@@ -108,26 +108,91 @@ namespace MHAPalletizing.Utils
         /// </summary>
         public static void WriteItemPlacements(string outputPath, Order order, List<Pallet> pallets)
         {
+            // ProductId별 색상 매핑 생성 (해시 기반)
+            var productColors = new Dictionary<string, string>();
+            var allProductIds = pallets.SelectMany(p => p.Items).Select(i => i.ProductId).Distinct().ToList();
+
+            foreach (var productId in allProductIds)
+            {
+                productColors[productId] = GenerateColorForProduct(productId);
+            }
+
             using (var writer = new StreamWriter(outputPath))
             {
-                // 헤더 (Pallet 크기 정보 포함)
+                // 헤더 (Color 열 추가)
                 writer.WriteLine("OrderId,PalletId,ItemId,ProductId,X,Y,Z," +
-                    "Length,Width,Height,Weight,IsRotated,PalletLength,PalletWidth,PalletMaxHeight");
+                    "Length,Width,Height,Weight,IsRotated,PalletLength,PalletWidth,PalletMaxHeight,Color");
 
                 foreach (var pallet in pallets)
                 {
                     foreach (var item in pallet.Items)
                     {
+                        string color = productColors[item.ProductId];
                         writer.WriteLine($"{order.OrderId},{pallet.PalletId},{item.ItemId}," +
                             $"{item.ProductId},{item.X:F2},{item.Y:F2},{item.Z:F2}," +
                             $"{item.CurrentLength:F2},{item.CurrentWidth:F2},{item.CurrentHeight:F2}," +
                             $"{item.Weight:F2},{item.IsRotated}," +
-                            $"{pallet.Length:F2},{pallet.Width:F2},{pallet.MaxHeight:F2}");
+                            $"{pallet.Length:F2},{pallet.Width:F2},{pallet.MaxHeight:F2},{color}");
                     }
                 }
             }
 
             Console.WriteLine($"✓ Item placements written to {outputPath}");
+        }
+
+        /// <summary>
+        /// ProductId를 기반으로 일관된 색상을 생성합니다 (visualizer.js와 동일한 알고리즘)
+        /// </summary>
+        private static string GenerateColorForProduct(string productId)
+        {
+            // 해시 계산
+            int hash = 0;
+            foreach (char ch in productId)
+            {
+                hash = ch + ((hash << 5) - hash);
+            }
+
+            // HSL 값 생성 (좋은 채도와 밝기)
+            int h = Math.Abs(hash % 360);
+            int s = 65 + (Math.Abs(hash >> 8) % 20);  // 65-85%
+            int l = 55 + (Math.Abs(hash >> 16) % 15); // 55-70%
+
+            // HSL을 RGB로 변환
+            double chroma = (1 - Math.Abs(2 * l / 100.0 - 1)) * s / 100.0;
+            double x = chroma * (1 - Math.Abs((h / 60.0) % 2 - 1));
+            double m = l / 100.0 - chroma / 2.0;
+
+            double r, g, b;
+            if (h < 60)
+            {
+                r = chroma; g = x; b = 0;
+            }
+            else if (h < 120)
+            {
+                r = x; g = chroma; b = 0;
+            }
+            else if (h < 180)
+            {
+                r = 0; g = chroma; b = x;
+            }
+            else if (h < 240)
+            {
+                r = 0; g = x; b = chroma;
+            }
+            else if (h < 300)
+            {
+                r = x; g = 0; b = chroma;
+            }
+            else
+            {
+                r = chroma; g = 0; b = x;
+            }
+
+            int red = (int)((r + m) * 255);
+            int green = (int)((g + m) * 255);
+            int blue = (int)((b + m) * 255);
+
+            return $"#{red:X2}{green:X2}{blue:X2}";
         }
 
         /// <summary>

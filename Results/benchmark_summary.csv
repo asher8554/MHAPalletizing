@@ -1,0 +1,25 @@
+=== Benchmark Summary Statistics ===
+
+Total Orders Processed,1
+Total Items,34
+Total Pallets Used,1
+
+=== Performance by Complexity ===
+Complexity,Orders,AvgPallets,AvgVolumeUtil,AvgPlacementRate,AvgTimeMs
+Interval5_0.8-1.0,1,1.00,0.2764,100.00,430.48
+
+=== Overall Performance Metrics ===
+Metric,Average,Min,Max,StdDev
+PalletsUsed,1.0000,1.0000,1.0000,0.0000
+PlacementRate(%),100.0000,100.0000,100.0000,0.0000
+VolumeUtilization,0.2764,0.2764,0.2764,0.0000
+HeightUtilization,0.3000,0.3000,0.3000,0.0000
+Heterogeneity,1.0000,1.0000,1.0000,0.0000
+Compactness,0.5441,0.5441,0.5441,0.0000
+Stability,0.9584,0.9584,0.9584,0.0000
+ExecutionTime(ms),430.4789,430.4789,430.4789,0.0000
+TimePerItem(ms),12.6611,12.6611,12.6611,0.0000
+
+=== Performance by Product Types ===
+ProductTypes,Orders,AvgPallets,AvgVolumeUtil,AvgHeterogeneity
+8,1,1.00,0.2764,1.0000

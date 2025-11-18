@@ -1,0 +1,2 @@
+OrderId,PalletId,ItemCount,ProductTypes,VolumeUtilization,HeightUtilization,Weight,Heterogeneity,Compactness,Products
+70138,1,34,8,0.2764,0.3000,261.60,1.0000,0.5441,"10122(2);99769(3);85667(1);44647(12);35003(6);34894(3);39563(1);47077(6)"

@@ -10,10 +10,10 @@ namespace MHAPalletizing.Models
     /// </summary>
     public class Pallet
     {
-        // Euro pallet 기본 치수 (논문 Section IV-A)
+        // Custom pallet 기본 치수 (Dataset0/Dataset1 호환)
         public const double DEFAULT_LENGTH = 2600; // mm
-        public const double DEFAULT_WIDTH = 1000;   // mm
-        public const double DEFAULT_HEIGHT = 1260; // mm (최대 적재 높이)
+        public const double DEFAULT_WIDTH = 2600;   // mm
+        public const double DEFAULT_HEIGHT = 1400; // mm (최대 적재 높이)
 
         // 팔레트 식별자
         public int PalletId { get; set; }
