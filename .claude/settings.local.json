@@ -8,7 +8,11 @@
       "Bash(git push:*)",
       "Bash(nul)",
       "Bash(findstr:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(find:*)",
+      "Bash(dotnet build:*)",
+      "Bash(timeout 30 ./bin/Debug/MHAPalletizing.exe:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []
