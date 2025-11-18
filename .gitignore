@@ -60,3 +60,10 @@ Desktop.ini
 
 # Application specific
 output.txt
+
+# Screenshots and temporary error files
+*.png
+*.jpg
+*.jpeg
+*.gif
+nul
