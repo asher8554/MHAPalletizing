@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>MixPalletizing 3D Visualization - Test</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        canvas { display: block; }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        select {
+            padding: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <select id="file-selector"></select>
+        <select id="pallet-selector"></select>
+    </div>
+    <div id="info">
+        <div>Status: <span id="status">Loading...</span></div>
+        <div>Pallets: <span id="pallet-count">-</span></div>
+        <div>Items: <span id="item-count">-</span></div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        console.log('THREE.js loaded:', typeof THREE !== 'undefined');
+        console.log('OrbitControls loaded:', typeof THREE.OrbitControls !== 'undefined');
+    </script>
+    <script src="visualizer.js"></script>
+    <script>
+        // Update status
+        document.getElementById('status').textContent = 'Ready';
+        console.log('Test page loaded successfully');
+    </script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+# MHA Palletizing 3D Visualization
+
+Interactive 3D visualization tool for viewing Multi-Heuristic Algorithm (MHA) palletizing results using Three.js.
+
+## Features
+
+- **3D Rendering**: Visualize packed pallets with accurate dimensions and colors
+- **Multiple Pallets**: View and switch between different pallets in the same order
+- **Statistics Panel**: Real-time display of:
+  - Item count
+  - Unique SKU count
+  - Volume utilization percentage
+  - Maximum stacking height
+- **Interactive Controls**:
+  - Orbit, zoom, and pan with mouse
+  - Reset camera view button
+  - Dropdown selectors for files and pallets
+- **Realistic Display**:
+  - Euro pallet base (1200×800×144mm)
+  - Packing volume boundary (1200×800×1400mm)
+  - SKU-based color coding from CSV
+  - Shadows and lighting effects
+  - Wireframe edges for clarity
+
+## Quick Start
+
+### 1. Generate Results
+
+Run your MHA algorithm to generate packing results. The CSV files will be automatically saved to the `Results/` folder:
+
+```bash
+dotnet build
+./bin/Debug/MHAPalletizing.exe
+```
+
+This will create files like `Results/item_placements_70138.csv`
+
+### 2. Start the Server
+
+```bash
+cd 3d_visualization
+python server.py
+```
+
+The server will start on `http://localhost:8001` and automatically read CSV files from `../Results/`
+
+### 3. Open in Browser
+
+Navigate to `http://localhost:8001` in your web browser.
+
+## CSV Format
+
+The visualization tool reads `item_placements_*.csv` files with the following format:
+
+```csv
+OrderId,PalletId,ItemId,ProductId,X,Y,Z,Length,Width,Height,Weight,IsRotated,Color
+70138,1,1189,72412,0.00,0.00,0.00,300.00,205.00,125.00,3.55,False,#67E641
+70138,1,1190,72412,0.00,205.00,0.00,300.00,205.00,125.00,3.55,False,#67E641
+...
+```
+
+### Column Descriptions
+
+- **OrderId**: Order number
+- **PalletId**: Pallet identifier (1, 2, 3, ...)
+- **ItemId**: Unique item identifier
+- **ProductId**: Product/SKU number (used for color coding if Color not provided)
+- **X, Y, Z**: Item position coordinates (mm) - bottom-left-front corner
+  - X: Length axis (0-1200mm)
+  - Y: Width axis (0-800mm)
+  - Z: Height axis (0-1400mm)
+- **Length, Width, Height**: Item dimensions (mm)
+- **Weight**: Item weight (kg)
+- **IsRotated**: Whether item is rotated 90° (True/False)
+- **Color**: Hex color code (e.g., "#67E641") - auto-generated if not present
+
+### Adding Colors to CSV
+
+If your CSV files don't have a Color column, run the provided script:
+
+```bash
+python add_colors_to_csv.py
+```
+
+This will add consistent colors to all `item_placements_*.csv` files in the Results folder based on ProductId.
+
+## Coordinate System
+
+The visualization uses the same coordinate system as the C# MHA implementation:
+
+- **Origin (0,0,0)**: Bottom-left-front corner of the pallet
+- **X-axis**: Pallet length (1200mm)
+- **Y-axis**: Pallet width (800mm)
+- **Z-axis**: Pallet height (0-1400mm)
+
+Items are positioned with their bottom-left-front corner at (X, Y, Z).
+
+## Controls
+
+### Mouse Controls
+- **Left Click + Drag**: Rotate view
+- **Right Click + Drag**: Pan view
+- **Scroll Wheel**: Zoom in/out
+
+### UI Controls
+- **Order File Selector**: Choose which CSV file to visualize
+- **Pallet Selector**: Switch between pallets in the selected order
+- **Reset Camera Button**: Return to default viewing angle
+
+## Troubleshooting
+
+### No CSV files showing up
+- Check that CSV files exist in the `Results/` folder
+- Ensure CSV files start with `item_placements_` and have `.csv` extension
+- Run the MHA algorithm first to generate results
+- Refresh the page after generating new results
+
+### Items not displaying correctly
+- Verify CSV format matches the expected columns
+- Check that coordinates are within pallet dimensions (1200×800×1400mm)
+- Ensure all numeric values are properly formatted
+
+### Server won't start
+- Verify Python is installed and in PATH
+- Check that port 8001 is not already in use
+- Try a different port by editing `PORT` in [server.py](server.py#L6)
+- Kill existing server: `taskkill /F /FI "WINDOWTITLE eq python*"`
+
+## Technical Details
+
+### Dependencies
+- **Three.js r128**: 3D rendering engine
+- **OrbitControls**: Camera control system
+- **Python 3**: Web server (built-in `http.server` module)
+
+### Performance
+- Tested with pallets containing 100+ items
+- Smooth rendering on modern browsers (Chrome, Firefox, Edge)
+- Shadow mapping enabled for realistic depth perception
+
+### Browser Compatibility
+- Chrome 90+ (recommended)
+- Firefox 88+
+- Edge 90+
+- Safari 14+
+
+## File Structure
+
+```
+MHAPalletizing/
+├── Results/                        # Generated packing results
+│   └── item_placements_*.csv      # CSV files read by visualizer
+├── 3d_visualization/
+│   ├── index.html                 # Main HTML page with UI
+│   ├── visualizer.js              # Three.js rendering logic
+│   ├── server.py                  # Python web server (reads from ../Results)
+│   └── README.md                  # This file
+└── ...
+```
+
+## Generating CSV Files
+
+CSV files are automatically generated by the MHA algorithm. The algorithm creates several result files:
+
+```
+Results/
+├── item_placements_70138.csv    # Item positions (used by visualizer)
+├── detailed_results_70138.csv   # Pallet-level details
+├── summary_results.csv           # Overall summary
+└── benchmark_*.csv               # Benchmark data
+```
+
+The visualizer specifically reads `item_placements_*.csv` files which contain the 3D coordinates and dimensions of each packed item.
+
+## Future Enhancements
+
+Potential improvements for the visualization tool:
+
+- [ ] Item selection/highlighting on click
+- [ ] Display item details (SKU, dimensions, weight)
+- [ ] Layer-by-layer view mode
+- [ ] Export visualization as image/video
+- [ ] Compare multiple packing solutions side-by-side
+- [ ] Animation of packing sequence
+- [ ] Heatmap of stability/support areas
+- [ ] VR/AR support for immersive viewing
+
+## License
+
+This visualization tool is part of the MHA Palletizing project implementing the IEEE Access 2024 paper by Anan Ashrabi Ananno and Luis Ribeiro.
