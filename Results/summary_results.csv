@@ -1,2 +1,0 @@
-OrderId,Algorithm,ItemCount,ProductTypes,Entropy,Complexity,PalletsUsed,ItemsPlaced,ItemsUnplaced,AvgVolumeUtilization,AvgHeightUtilization,TotalWeight,AvgHeterogeneity,AvgCompactness,ExecutionTimeMs
-70138,MHA,70,9,0.8121,Interval5_0.8-1.0,3,70,0,0.4363,0.6731,1759.10,0.3704,0.5210,1207.49
