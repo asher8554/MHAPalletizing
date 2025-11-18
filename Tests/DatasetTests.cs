@@ -1,9 +1,10 @@
+using MHAPalletizing.Models;
+using MHAPalletizing.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using MHAPalletizing.Models;
-using MHAPalletizing.Utils;
 
 namespace MHAPalletizing.Tests
 {
@@ -12,27 +13,41 @@ namespace MHAPalletizing.Tests
     /// </summary>
     public static class DatasetTests
     {
-        private const string DATASET_PATH = @"E:\Github\MHAPalletizing\3DBPP-master\Dataset10.csv";
-        private const string RESULTS_PATH = @"E:\Github\MHAPalletizing\Results\";
+        // DATASET_PATH를 프로그램 실행 시 첨부된 파일로 동적 설정 (Program.cs에서 설정)
+        public static string projectDir = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.FullName;
+        public static string DATASET_PATH = projectDir+@"\3DBPP-master\Dataset0.csv";
+        private static string RESULTS_PATH = projectDir+@"\Results\";
 
         /// <summary>
         /// 병렬 처리로 Dataset10 전체 테스트 (빠른 처리)
         /// </summary>
-        public static void RunDatasetTestsParallel(int maxThreads = 0)
+        public static void RunDatasetTestsParallel(int maxThreads = 0, string datasetPath = null)
         {
-            Console.WriteLine("\n╔═══════════════════════════════════════════════════════════╗");
-            Console.WriteLine("║      Dataset10 MHA Algorithm Test (Parallel Mode)        ║");
-            Console.WriteLine("╚═══════════════════════════════════════════════════════════╝\n");
-
-            // 결과 폴더 생성
-            if (!System.IO.Directory.Exists(RESULTS_PATH))
+            Console.WriteLine($"{projectDir}");
+            // 파라미터로 경로가 전달되면 우선 사용
+            if (!string.IsNullOrEmpty(datasetPath))
             {
-                System.IO.Directory.CreateDirectory(RESULTS_PATH);
-                Console.WriteLine($"✓ Created results directory: {RESULTS_PATH}");
+                DATASET_PATH = datasetPath;
             }
 
+            Console.WriteLine("\n╔═══════════════════════════════════════════════════════════╗");
+            Console.WriteLine("║      Dataset10 MHA Algorithm Test (Parallel Mode)         ║");
+            Console.WriteLine("╚═══════════════════════════════════════════════════════════╝\n");
+
+            // 결과 폴더 초기화 (기존 파일 삭제)
+            if (System.IO.Directory.Exists(RESULTS_PATH))
+            {
+                Console.Write("🗑️  Cleaning previous results... ");
+                System.IO.Directory.Delete(RESULTS_PATH, recursive: true);
+                Console.WriteLine("✓");
+            }
+
+            // 결과 폴더 생성
+            System.IO.Directory.CreateDirectory(RESULTS_PATH);
+            Console.WriteLine($"📁 Results directory: {RESULTS_PATH}");
+
             // CSV에서 주문 읽기
-            Console.WriteLine($"Reading orders from: {DATASET_PATH}");
+            Console.WriteLine($"📂 Dataset: {System.IO.Path.GetFileName(DATASET_PATH)}");
             var orders = CsvReader.ReadOrdersFromCsv(DATASET_PATH);
             Console.WriteLine($"✓ Loaded {orders.Count} orders\n");
 
@@ -51,17 +66,23 @@ namespace MHAPalletizing.Tests
         public static void RunDatasetTestsInBatches(int batchSize = 10, int maxThreads = 0)
         {
             Console.WriteLine("\n╔═══════════════════════════════════════════════════════════╗");
-            Console.WriteLine("║      Dataset10 MHA Algorithm Test (Batch Mode)           ║");
+            Console.WriteLine("║      Dataset10 MHA Algorithm Test (Batch Mode)            ║");
             Console.WriteLine("╚═══════════════════════════════════════════════════════════╝\n");
 
-            // 결과 폴더 생성
-            if (!System.IO.Directory.Exists(RESULTS_PATH))
+            // 결과 폴더 초기화 (기존 파일 삭제)
+            if (System.IO.Directory.Exists(RESULTS_PATH))
             {
-                System.IO.Directory.CreateDirectory(RESULTS_PATH);
+                Console.Write("🗑️  Cleaning previous results... ");
+                System.IO.Directory.Delete(RESULTS_PATH, recursive: true);
+                Console.WriteLine("✓");
             }
 
+            // 결과 폴더 생성
+            System.IO.Directory.CreateDirectory(RESULTS_PATH);
+            Console.WriteLine($"📁 Results directory: {RESULTS_PATH}");
+
             // CSV에서 주문 읽기
-            Console.WriteLine($"Reading orders from: {DATASET_PATH}");
+            Console.WriteLine($"📂 Dataset: {System.IO.Path.GetFileName(DATASET_PATH)}");
             var orders = CsvReader.ReadOrdersFromCsv(DATASET_PATH);
             Console.WriteLine($"✓ Loaded {orders.Count} orders\n");
 
@@ -80,7 +101,7 @@ namespace MHAPalletizing.Tests
         public static void RunDatasetTests()
         {
             Console.WriteLine("\n╔═══════════════════════════════════════════════════════════╗");
-            Console.WriteLine("║         Dataset10 MHA Algorithm Test                     ║");
+            Console.WriteLine("║         Dataset10 MHA Algorithm Test                      ║");
             Console.WriteLine("╚═══════════════════════════════════════════════════════════╝\n");
 
             // 결과 폴더 생성
@@ -97,6 +118,7 @@ namespace MHAPalletizing.Tests
 
             // 결과 파일 경로
             string summaryPath = RESULTS_PATH + "summary_results.csv";
+            string benchmarkPath = RESULTS_PATH + "benchmark_results.csv";
             string detailedPath = RESULTS_PATH + "detailed_results_{0}.csv";
             string placementsPath = RESULTS_PATH + "item_placements_{0}.csv";
 
@@ -105,6 +127,13 @@ namespace MHAPalletizing.Tests
             {
                 System.IO.File.Delete(summaryPath);
             }
+            if (System.IO.File.Exists(benchmarkPath))
+            {
+                System.IO.File.Delete(benchmarkPath);
+            }
+
+            // 벤치마크 결과 수집용 리스트
+            var benchmarkResults = new List<BenchmarkEvaluator.BenchmarkResult>();
 
             // 각 주문에 대해 MHA 실행
             int processedCount = 0;
@@ -136,11 +165,16 @@ namespace MHAPalletizing.Tests
                 stopwatch.Stop();
                 double executionTimeMs = stopwatch.Elapsed.TotalMilliseconds;
 
-                // 결과 요약 출력
-                ResultWriter.PrintSummary(order, pallets, executionTimeMs);
+                // 벤치마크 결과 계산 및 저장
+                var benchmarkResult = BenchmarkEvaluator.CalculateBenchmark(order, pallets, executionTimeMs);
+                benchmarkResults.Add(benchmarkResult);
+
+                // 벤치마크 결과 출력
+                BenchmarkEvaluator.PrintBenchmarkResult(benchmarkResult);
 
                 // CSV에 결과 기록
                 ResultWriter.AppendOrderResult(summaryPath, order, pallets, executionTimeMs);
+                BenchmarkEvaluator.AppendBenchmarkResult(benchmarkPath, benchmarkResult);
 
                 // 상세 결과 저장
                 string detailedFile = string.Format(detailedPath, order.OrderId);
@@ -153,11 +187,17 @@ namespace MHAPalletizing.Tests
                 Console.WriteLine($"  ✓ Order {order.OrderId} completed in {executionTimeMs:F2}ms\n");
             }
 
+            // 전체 벤치마크 요약 통계 생성
+            string summaryStatsPath = RESULTS_PATH + "benchmark_summary.csv";
+            BenchmarkEvaluator.WriteSummaryStatistics(summaryStatsPath, benchmarkResults);
+
             Console.WriteLine("\n╔═══════════════════════════════════════════════════════════╗");
-            Console.WriteLine($"║  All {processedCount} orders processed successfully!                 ║");
-            Console.WriteLine("╚═══════════════════════════════════════════════════════════╝");
+            Console.WriteLine($"║  All {processedCount} orders processed successfully!      ║");
+            Console.WriteLine($"╚═══════════════════════════════════════════════════════════╝");
             Console.WriteLine($"\nResults saved to: {RESULTS_PATH}");
             Console.WriteLine($"  - Summary: summary_results.csv");
+            Console.WriteLine($"  - Benchmark: benchmark_results.csv");
+            Console.WriteLine($"  - Benchmark Summary: benchmark_summary.csv");
             Console.WriteLine($"  - Detailed: detailed_results_[OrderId].csv");
             Console.WriteLine($"  - Placements: item_placements_[OrderId].csv");
         }
@@ -185,7 +225,10 @@ namespace MHAPalletizing.Tests
             stopwatch.Stop();
 
             double executionTimeMs = stopwatch.Elapsed.TotalMilliseconds;
-            ResultWriter.PrintSummary(order, pallets, executionTimeMs);
+
+            // 벤치마크 결과 계산 및 출력
+            var benchmarkResult = BenchmarkEvaluator.CalculateBenchmark(order, pallets, executionTimeMs);
+            BenchmarkEvaluator.PrintBenchmarkResult(benchmarkResult);
 
             // 결과 저장
             if (!System.IO.Directory.Exists(RESULTS_PATH))
@@ -195,6 +238,9 @@ namespace MHAPalletizing.Tests
 
             string summaryPath = RESULTS_PATH + "single_order_result.csv";
             ResultWriter.AppendOrderResult(summaryPath, order, pallets, executionTimeMs);
+
+            string benchmarkPath = RESULTS_PATH + $"benchmark_{orderId}.csv";
+            BenchmarkEvaluator.AppendBenchmarkResult(benchmarkPath, benchmarkResult);
 
             string detailedPath = RESULTS_PATH + $"detailed_{orderId}.csv";
             ResultWriter.WriteDetailedResults(detailedPath, order, pallets);

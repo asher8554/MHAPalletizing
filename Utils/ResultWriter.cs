@@ -110,9 +110,9 @@ namespace MHAPalletizing.Utils
         {
             using (var writer = new StreamWriter(outputPath))
             {
-                // 헤더
+                // 헤더 (Pallet 크기 정보 포함)
                 writer.WriteLine("OrderId,PalletId,ItemId,ProductId,X,Y,Z," +
-                    "Length,Width,Height,Weight,IsRotated");
+                    "Length,Width,Height,Weight,IsRotated,PalletLength,PalletWidth,PalletMaxHeight");
 
                 foreach (var pallet in pallets)
                 {
@@ -121,7 +121,8 @@ namespace MHAPalletizing.Utils
                         writer.WriteLine($"{order.OrderId},{pallet.PalletId},{item.ItemId}," +
                             $"{item.ProductId},{item.X:F2},{item.Y:F2},{item.Z:F2}," +
                             $"{item.CurrentLength:F2},{item.CurrentWidth:F2},{item.CurrentHeight:F2}," +
-                            $"{item.Weight:F2},{item.IsRotated}");
+                            $"{item.Weight:F2},{item.IsRotated}," +
+                            $"{pallet.Length:F2},{pallet.Width:F2},{pallet.MaxHeight:F2}");
                     }
                 }
             }

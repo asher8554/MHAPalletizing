@@ -60,6 +60,7 @@
     <Compile Include="Phase2\GeneticAlgorithm.cs" />
     <Compile Include="Utils\CsvReader.cs" />
     <Compile Include="Utils\ResultWriter.cs" />
+    <Compile Include="Utils\BenchmarkEvaluator.cs" />
     <Compile Include="Utils\ParallelProcessor.cs" />
     <Compile Include="Tests\BasicTests.cs" />
     <Compile Include="Tests\Phase1Tests.cs" />

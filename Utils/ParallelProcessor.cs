@@ -66,6 +66,7 @@ namespace MHAPalletizing.Utils
 
             // 결과 파일 경로
             string summaryPath = System.IO.Path.Combine(resultsPath, "summary_results.csv");
+            string benchmarkPath = System.IO.Path.Combine(resultsPath, "benchmark_results.csv");
             string detailedPathTemplate = System.IO.Path.Combine(resultsPath, "detailed_results_{0}.csv");
             string placementsPathTemplate = System.IO.Path.Combine(resultsPath, "item_placements_{0}.csv");
 
@@ -74,10 +75,16 @@ namespace MHAPalletizing.Utils
             {
                 System.IO.File.Delete(summaryPath);
             }
+            if (System.IO.File.Exists(benchmarkPath))
+            {
+                System.IO.File.Delete(benchmarkPath);
+            }
 
             // 스레드 안전한 결과 수집기
             var results = new ConcurrentBag<OrderResult>();
             var errors = new ConcurrentBag<string>();
+
+            Console.WriteLine("--> Starting parallel processing loop...");
 
             // Parallel.ForEach로 병렬 처리
             var parallelOptions = new ParallelOptions
@@ -113,15 +120,23 @@ namespace MHAPalletizing.Utils
                     };
                     results.Add(result);
 
-                    // 진행률 업데이트 (스레드 안전)
+                    // 진행률 업데이트 (스레드 안전) - 한 줄로 간결하게
                     lock (lockObject)
                     {
                         completedCount++;
                         double progress = (double)completedCount / totalCount * 100;
-                        Console.WriteLine($"[{completedCount}/{totalCount}] ({progress:F1}%) " +
-                            $"Order {order.OrderId}: {pallets.Count} pallets, " +
-                            $"{pallets.Sum(p => p.Items.Count)}/{order.TotalItemCount} items, " +
-                            $"{executionTimeMs:F0}ms");
+                        int itemsPlaced = pallets.Sum(p => p.Items.Count);
+                        double avgUtil = pallets.Any() ? pallets.Average(p => p.VolumeUtilization) : 0;
+
+                        Console.Write($"\r[{completedCount}/{totalCount}] {progress:F0}% | Order {order.OrderId} | " +
+                                     $"{itemsPlaced}/{order.TotalItemCount} items | {pallets.Count}P | " +
+                                     $"Util {avgUtil:P0} | {executionTimeMs / 1000:F1}s   ");
+
+                        // 진행률이 100%가 되면 줄바꿈
+                        if (completedCount == totalCount)
+                        {
+                            Console.WriteLine();
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -130,23 +145,42 @@ namespace MHAPalletizing.Utils
                     {
                         completedCount++;
                         errors.Add($"Order {order.OrderId}: {ex.Message}");
-                        Console.WriteLine($"[{completedCount}/{totalCount}] ⚠ Order {order.OrderId} failed: {ex.Message}");
+                        double progress = (double)completedCount / totalCount * 100;
+                        Console.Write($"\r[{completedCount}/{totalCount}] {progress:F0}% | ⚠ Order {order.OrderId} FAILED   ");
+
+                        if (completedCount == totalCount)
+                        {
+                            Console.WriteLine();
+                        }
                     }
                 }
             });
 
             // 모든 처리 완료 후 결과 저장
-            Console.WriteLine("\n" + new string('═', 60));
-            Console.WriteLine("Saving results to CSV files...");
+            Console.WriteLine("\n--> Parallel processing loop finished.");
+            Console.WriteLine("--> Starting to save results...");
+            Console.WriteLine(new string('═', 60));
+            Console.Write("Saving results to CSV files...");
 
             // 결과를 OrderId 순으로 정렬
             var sortedResults = results.OrderBy(r => r.Order.OrderId).ToList();
 
+            // 벤치마크 결과 수집
+            var benchmarkResults = new List<BenchmarkEvaluator.BenchmarkResult>();
+
             // 스레드 안전하게 파일에 기록
             foreach (var result in sortedResults)
             {
+                // 벤치마크 결과 계산
+                var benchmarkResult = BenchmarkEvaluator.CalculateBenchmark(
+                    result.Order, result.Pallets, result.ExecutionTimeMs);
+                benchmarkResults.Add(benchmarkResult);
+
                 // 요약 결과 추가
                 ResultWriter.AppendOrderResult(summaryPath, result.Order, result.Pallets, result.ExecutionTimeMs);
+
+                // 벤치마크 결과 추가
+                BenchmarkEvaluator.AppendBenchmarkResult(benchmarkPath, benchmarkResult);
 
                 // 상세 결과 저장
                 string detailedFile = string.Format(detailedPathTemplate, result.Order.OrderId);
@@ -157,31 +191,26 @@ namespace MHAPalletizing.Utils
                 ResultWriter.WriteItemPlacements(placementsFile, result.Order, result.Pallets);
             }
 
+            // 벤치마크 요약 통계 생성
+            string summaryStatsPath = System.IO.Path.Combine(resultsPath, "benchmark_summary.csv");
+            BenchmarkEvaluator.WriteSummaryStatistics(summaryStatsPath, benchmarkResults);
+
+            Console.WriteLine(" ✓");
+            Console.WriteLine("--> Finished saving results.");
+
             // 최종 통계
             var totalTime = (DateTime.Now - startTime).TotalSeconds;
             Console.WriteLine(new string('═', 60));
-            Console.WriteLine($"\n✓ Parallel Processing Complete!");
-            Console.WriteLine($"  Total Orders: {totalCount}");
-            Console.WriteLine($"  Successful: {results.Count}");
-            Console.WriteLine($"  Failed: {errors.Count}");
-            Console.WriteLine($"  Total Time: {totalTime:F2}s");
-            Console.WriteLine($"  Avg Time per Order: {totalTime / totalCount:F2}s");
-            Console.WriteLine($"  Speedup: ~{maxDegreeOfParallelism}x (with {maxDegreeOfParallelism} threads)");
+            Console.WriteLine($"✓ Processing Complete! {results.Count}/{totalCount} successful | " +
+                             $"Time: {totalTime:F1}s (avg {totalTime / totalCount:F1}s/order) | " +
+                             $"Speedup: ~{maxDegreeOfParallelism}x");
 
             if (errors.Any())
             {
-                Console.WriteLine($"\n⚠ Errors:");
-                foreach (var error in errors.Take(10))
-                {
-                    Console.WriteLine($"  - {error}");
-                }
-                if (errors.Count > 10)
-                {
-                    Console.WriteLine($"  ... and {errors.Count - 10} more errors");
-                }
+                Console.WriteLine($"⚠ {errors.Count} errors occurred (check log)");
             }
 
-            Console.WriteLine($"\nResults saved to: {resultsPath}");
+            Console.WriteLine($"📁 Results: {resultsPath}");
         }
 
         /// <summary>
