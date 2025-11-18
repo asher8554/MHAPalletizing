@@ -15,7 +15,7 @@ namespace MHAPalletizing.Tests
     {
         // DATASET_PATH를 프로그램 실행 시 첨부된 파일로 동적 설정 (Program.cs에서 설정)
         public static string projectDir = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.FullName;
-        public static string DATASET_PATH = projectDir+@"\3DBPP-master\Dataset0.csv";
+        public static string DATASET_PATH = projectDir+@"\3DBPP-master\Dataset1.csv";
         private static string RESULTS_PATH = projectDir+@"\Results\";
 
         /// <summary>
