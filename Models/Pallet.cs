@@ -11,8 +11,8 @@ namespace MHAPalletizing.Models
     public class Pallet
     {
         // Custom pallet 기본 치수 (Dataset0/Dataset1 호환)
-        public const double DEFAULT_LENGTH = 2600; // mm
-        public const double DEFAULT_WIDTH = 2600;   // mm
+        public const double DEFAULT_LENGTH = 1200; // mm
+        public const double DEFAULT_WIDTH = 800;   // mm
         public const double DEFAULT_HEIGHT = 1400; // mm (최대 적재 높이)
 
         // 팔레트 식별자

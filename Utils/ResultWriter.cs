@@ -141,7 +141,8 @@ namespace MHAPalletizing.Utils
         }
 
         /// <summary>
-        /// ProductId를 기반으로 일관된 색상을 생성합니다 (visualizer.js와 동일한 알고리즘)
+        /// ProductId를 기반으로 일관되고 구분 가능한 색상을 생성합니다
+        /// Golden angle 방식으로 색상 간격을 넓게 분산시켜 시각적 차이를 극대화
         /// </summary>
         private static string GenerateColorForProduct(string productId)
         {
@@ -152,10 +153,17 @@ namespace MHAPalletizing.Utils
                 hash = ch + ((hash << 5) - hash);
             }
 
-            // HSL 값 생성 (좋은 채도와 밝기)
-            int h = Math.Abs(hash % 360);
-            int s = 65 + (Math.Abs(hash >> 8) % 20);  // 65-85%
-            int l = 55 + (Math.Abs(hash >> 16) % 15); // 55-70%
+            // Golden angle (137.5도)을 사용하여 색상 간격을 넓게 분산
+            // 이 방법은 fibonacci spiral처럼 색상을 균등하게 배치
+            int baseIndex = Math.Abs(hash);
+            double goldenAngle = 137.508;
+            int h = (int)(baseIndex * goldenAngle) % 360;
+
+            // 채도를 높게 고정 (80-95%) - 선명한 색상
+            int s = 80 + (Math.Abs(hash >> 8) % 16);
+
+            // 밝기는 중간 범위로 고정 (45-65%) - 너무 밝거나 어둡지 않게
+            int l = 45 + (Math.Abs(hash >> 16) % 21);
 
             // HSL을 RGB로 변환
             double chroma = (1 - Math.Abs(2 * l / 100.0 - 1)) * s / 100.0;
