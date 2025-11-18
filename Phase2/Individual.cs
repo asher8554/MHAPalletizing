@@ -14,9 +14,10 @@ namespace MHAPalletizing.Phase2
         // 유전자: 아이템 타입의 배치 순서
         public List<string> Genes { get; set; }
 
-        // Fitness 값
-        public double HeterogeneityScore { get; set; }  // 낮을수록 좋음
-        public double CompactnessScore { get; set; }    // 높을수록 좋음
+        // Fitness 값 (3-목적 최적화)
+        public double HeterogeneityScore { get; set; }      // 낮을수록 좋음 (Minimize)
+        public double CompactnessScore { get; set; }        // 높을수록 좋음 (Maximize)
+        public double VolumeUtilizationScore { get; set; }  // 높을수록 좋음 (Maximize) - OPTION 3
 
         // 메타데이터: 실제 배치 결과 (GA 평가 시 저장)
         public Dictionary<string, ItemPlacementInfo> PlacementMetadata { get; set; }
@@ -35,6 +36,7 @@ namespace MHAPalletizing.Phase2
             IsValid = false;
             HeterogeneityScore = double.MaxValue;
             CompactnessScore = 0;
+            VolumeUtilizationScore = 0;  // OPTION 3
             Rank = int.MaxValue;
             CrowdingDistance = 0;
         }
@@ -48,6 +50,7 @@ namespace MHAPalletizing.Phase2
             {
                 HeterogeneityScore = this.HeterogeneityScore,
                 CompactnessScore = this.CompactnessScore,
+                VolumeUtilizationScore = this.VolumeUtilizationScore,  // OPTION 3
                 IsValid = this.IsValid,
                 Rank = this.Rank,
                 CrowdingDistance = this.CrowdingDistance
@@ -62,13 +65,15 @@ namespace MHAPalletizing.Phase2
         }
 
         /// <summary>
-        /// Pareto Dominance 비교
+        /// Pareto Dominance 비교 (3-목적 최적화)
         /// individual1이 individual2를 dominate하면 true
         /// </summary>
         public static bool Dominates(Individual ind1, Individual ind2)
         {
+            // OPTION 3: 3-목적 최적화
             // Fitness 1: Heterogeneity (최소화)
             // Fitness 2: Compactness (최대화)
+            // Fitness 3: Volume Utilization (최대화)
 
             bool betterInOne = false;
 
@@ -82,6 +87,12 @@ namespace MHAPalletizing.Phase2
             if (ind1.CompactnessScore > ind2.CompactnessScore)
                 betterInOne = true;
             else if (ind1.CompactnessScore < ind2.CompactnessScore)
+                return false;
+
+            // Volume Utilization: 높을수록 좋음 (OPTION 3)
+            if (ind1.VolumeUtilizationScore > ind2.VolumeUtilizationScore)
+                betterInOne = true;
+            else if (ind1.VolumeUtilizationScore < ind2.VolumeUtilizationScore)
                 return false;
 
             return betterInOne;
@@ -106,6 +117,7 @@ namespace MHAPalletizing.Phase2
         {
             return $"Individual: Genes={Genes.Count}, Valid={IsValid}, " +
                    $"Heterogeneity={HeterogeneityScore:F4}, Compactness={CompactnessScore:F4}, " +
+                   $"VolumeUtil={VolumeUtilizationScore:F4}, " +  // OPTION 3
                    $"Rank={Rank}, CD={CrowdingDistance:F4}";
         }
     }

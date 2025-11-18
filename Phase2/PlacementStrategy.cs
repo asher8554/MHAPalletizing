@@ -208,15 +208,18 @@ namespace MHAPalletizing.Phase2
             }
 
             // 4. Stability (전체 팔레트)
-            // 아이템 수에 따라 stability tolerance를 동적으로 조정
-            // 적은 아이템: 배치 유연성 우선 / 많은 아이템: 안정성 우선
-            double stabilityTolerance = 0.99;       // 1-2개: 거의 제약 없음
-            if (pallet.Items.Count >= 10)
-                stabilityTolerance = 0.4;           // 10개 이상: 엄격한 제약
-            else if (pallet.Items.Count >= 5)
-                stabilityTolerance = 0.5;           // 5-9개: 중간 제약
-            else if (pallet.Items.Count >= 3)
-                stabilityTolerance = 0.7;           // 3-4개: 완화된 제약
+            // OPTION 2: 동적 Tolerance 전략 (팔레트 채움률에 따라 조정)
+            // 초기: 넓게 펴기 허용 → 높이 증가 시 안정성 강화
+            double fillRate = pallet.CurrentHeight / pallet.MaxHeight;
+
+            // 기본 tolerance 계산: 0.3 (최소) ~ 0.8 (최대)
+            // fillRate 0% → tolerance 0.8 (넓게 펴기 허용)
+            // fillRate 100% → tolerance 0.3 (엄격한 안정성)
+            double stabilityTolerance = 0.3 + (1.0 - fillRate) * 0.5;
+
+            // 아이템 수가 적을 때 추가 완화
+            if (pallet.Items.Count < 3)
+                stabilityTolerance = Math.Min(0.99, stabilityTolerance + 0.2);
 
             if (!ConstraintValidator.ValidateStabilityAfterPlacement(pallet, item, tolerance: stabilityTolerance))
                 return false;

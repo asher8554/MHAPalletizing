@@ -94,13 +94,16 @@ namespace MHAPalletizing.Phase2
             // 초기 개체군 생성
             var population = InitializePopulation();
 
-            // 진화
+            // 진화 - 진행률 표시 (한 줄로 업데이트)
             Individual bestSolution = null;
             int stagnationCount = 0;
             double previousBestFitness = double.MaxValue;
+            int lastGeneration = 0;
 
             for (int generation = 0; generation < MAX_GENERATIONS; generation++)
             {
+                lastGeneration = generation;
+
                 // 개체 평가
                 EvaluatePopulation(population);
 
@@ -109,12 +112,19 @@ namespace MHAPalletizing.Phase2
 
                 if (validIndividuals.Any())
                 {
-                    // 가장 좋은 개체 선택 (Compactness 우선)
-                    var currentBest = validIndividuals.OrderByDescending(ind => ind.CompactnessScore)
+                    // OPTION 3: 가장 좋은 개체 선택 (Volume Utilization 추가, 우선순위: VolumeUtil > Compactness > Heterogeneity)
+                    var currentBest = validIndividuals.OrderByDescending(ind => ind.VolumeUtilizationScore)
+                                                     .ThenByDescending(ind => ind.CompactnessScore)
                                                      .ThenBy(ind => ind.HeterogeneityScore)
                                                      .First();
 
-                    double currentFitness = -currentBest.CompactnessScore + currentBest.HeterogeneityScore;
+                    double currentFitness = -currentBest.VolumeUtilizationScore - currentBest.CompactnessScore + currentBest.HeterogeneityScore;
+
+                    // 진행률 출력 (한 줄로 덮어쓰기)
+                    int placedCount = currentBest.PlacementMetadata.Sum(p => p.Value.Positions.Count);
+
+                    Console.Write($"\r  GA Gen {generation + 1}/{MAX_GENERATIONS} | Items: {placedCount}/{residuals.Count} | " +
+                                 $"Vol: {currentBest.VolumeUtilizationScore:F3} | Compact: {currentBest.CompactnessScore:F3} | Hetero: {currentBest.HeterogeneityScore:F2} | Stag: {stagnationCount}/{MAX_STAGNATION}   ");
 
                     if (Math.Abs(currentFitness - previousBestFitness) < 0.0001)
                     {
@@ -129,7 +139,10 @@ namespace MHAPalletizing.Phase2
 
                     // Early stopping
                     if (stagnationCount >= MAX_STAGNATION)
+                    {
+                        Console.WriteLine($"\r  ✓ GA converged at Gen {generation + 1} | Items: {placedCount}/{residuals.Count}                                           ");
                         break;
+                    }
                 }
 
                 // 선택
@@ -145,10 +158,16 @@ namespace MHAPalletizing.Phase2
             // 최적 해 적용
             if (bestSolution != null && bestSolution.IsValid)
             {
+                if (stagnationCount < MAX_STAGNATION)
+                {
+                    int finalPlaced = bestSolution.PlacementMetadata.Sum(p => p.Value.Positions.Count);
+                    Console.WriteLine($"\r  ✓ GA completed {lastGeneration + 1} generations | Items: {finalPlaced}/{residuals.Count}                                    ");
+                }
                 ApplySolution(bestSolution, residuals, out usedPallets);
                 return true;
             }
 
+            Console.WriteLine($"\r  ✗ GA failed to find valid solution                                                                    ");
             return false; // 배치 실패
         }
 
@@ -318,6 +337,9 @@ namespace MHAPalletizing.Phase2
 
                 // Fitness 2: Compactness (최대화)
                 individual.CompactnessScore = usedPallets.Average(p => p.GetAverageCompactness());
+
+                // OPTION 3: Fitness 3: Volume Utilization (최대화)
+                individual.VolumeUtilizationScore = usedPallets.Average(p => p.VolumeUtilization);
             }
         }
         #endregion
@@ -445,6 +467,8 @@ namespace MHAPalletizing.Phase2
                 return;
             }
 
+            // OPTION 3: 3-목적 최적화 Crowding Distance
+
             // Objective 1: Heterogeneity
             var sortedByObj1 = front.OrderBy(ind => ind.HeterogeneityScore).ToList();
             sortedByObj1[0].CrowdingDistance = double.MaxValue;
@@ -472,6 +496,21 @@ namespace MHAPalletizing.Phase2
                 {
                     sortedByObj2[i].CrowdingDistance +=
                         (sortedByObj2[i + 1].CompactnessScore - sortedByObj2[i - 1].CompactnessScore) / range2;
+                }
+            }
+
+            // Objective 3: Volume Utilization (OPTION 3)
+            var sortedByObj3 = front.OrderBy(ind => ind.VolumeUtilizationScore).ToList();
+            sortedByObj3[0].CrowdingDistance = double.MaxValue;
+            sortedByObj3[size - 1].CrowdingDistance = double.MaxValue;
+
+            double range3 = sortedByObj3[size - 1].VolumeUtilizationScore - sortedByObj3[0].VolumeUtilizationScore;
+            if (range3 > 0)
+            {
+                for (int i = 1; i < size - 1; i++)
+                {
+                    sortedByObj3[i].CrowdingDistance +=
+                        (sortedByObj3[i + 1].VolumeUtilizationScore - sortedByObj3[i - 1].VolumeUtilizationScore) / range3;
                 }
             }
         }
