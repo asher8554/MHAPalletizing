@@ -52,11 +52,11 @@ namespace MHAPalletizing.Models
         public string GetComplexityClass()
         {
             double e = Entropy;
-            if (e <= 0.2) return "Entropy Interval 1 [0, 0.2]";
-            if (e <= 0.4) return "Entropy Interval 2 (0.2, 0.4]";
-            if (e <= 0.6) return "Entropy Interval 3 (0.4, 0.6]";
-            if (e <= 0.8) return "Entropy Interval 4 (0.6, 0.8]";
-            return "Entropy Interval 5 (0.8, 1.0]";
+            if (e <= 0.2) return "Interval1_0.0-0.2";
+            if (e <= 0.4) return "Interval2_0.2-0.4";
+            if (e <= 0.6) return "Interval3_0.4-0.6";
+            if (e <= 0.8) return "Interval4_0.6-0.8";
+            return "Interval5_0.8-1.0";
         }
 
         // 주문 크기 분류 (논문 Section V-B)

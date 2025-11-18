@@ -120,11 +120,11 @@ namespace MHAPalletizing.Phase2
 
                     double currentFitness = -currentBest.VolumeUtilizationScore - currentBest.CompactnessScore + currentBest.HeterogeneityScore;
 
-                    // 진행률 출력 (한 줄로 덮어쓰기)
+                    // 진행률 출력 (한 줄로 덮어쓰기) - ParallelProcessor에서 출력하므로 주석 처리
                     int placedCount = currentBest.PlacementMetadata.Sum(p => p.Value.Positions.Count);
 
-                    Console.Write($"\r  GA Gen {generation + 1}/{MAX_GENERATIONS} | Items: {placedCount}/{residuals.Count} | " +
-                                 $"Vol: {currentBest.VolumeUtilizationScore:F3} | Compact: {currentBest.CompactnessScore:F3} | Hetero: {currentBest.HeterogeneityScore:F2} | Stag: {stagnationCount}/{MAX_STAGNATION}   ");
+                    // Console.Write($"\r  GA Gen {generation + 1}/{MAX_GENERATIONS} | Items: {placedCount}/{residuals.Count} | " +
+                    //              $"Vol: {currentBest.VolumeUtilizationScore:F3} | Compact: {currentBest.CompactnessScore:F3} | Hetero: {currentBest.HeterogeneityScore:F2} | Stag: {stagnationCount}/{MAX_STAGNATION}   ");
 
                     if (Math.Abs(currentFitness - previousBestFitness) < 0.0001)
                     {

@@ -13,8 +13,8 @@ namespace MHAPalletizing
             Console.InputEncoding = Encoding.UTF8;
 
             Console.WriteLine("╔════════════════════════════════════════════════╗");
-            Console.WriteLine("║   MHA Palletizing Algorithm Implementation    ║");
-            Console.WriteLine("║   Multi-Heuristic 3D Bin Packing Problem      ║");
+            Console.WriteLine("║   MHA Palletizing Algorithm Implementation     ║");
+            Console.WriteLine("║   Multi-Heuristic 3D Bin Packing Problem       ║");
             Console.WriteLine("╚════════════════════════════════════════════════╝");
             Console.WriteLine();
 

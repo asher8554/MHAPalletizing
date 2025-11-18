@@ -82,27 +82,20 @@ namespace MHAPalletizing.Constraints
         #region Constraint 4: Support
         /// <summary>
         /// Constraint 4: Support - 아이템이 적절히 지지되는지 확인
-        /// 논문: "at least 40% of base + 4 vertices OR 50% + 3 vertices OR 75% + 2 vertices"
+        /// 논문: "40% + 4 vertices OR 50% + 3 vertices OR 75% + 2 vertices"
         /// </summary>
         public static bool ValidateSupport(Item item, Pallet pallet, double vertexInset = 10)
         {
-            // 바닥에 있는 경우 항상 지지됨 (조기 종료)
+            // 바닥에 있는 경우 항상 지지됨
             if (item.Z < EPSILON)
                 return true;
 
-            // 최적화: LINQ 대신 foreach로 itemsBelow 직접 수집
-            List<Item> itemsBelow = null;
-            foreach (var other in pallet.Items)
-            {
-                if (Math.Abs(item.Z - other.MaxZ) < EPSILON)
-                {
-                    if (itemsBelow == null)
-                        itemsBelow = new List<Item>();
-                    itemsBelow.Add(other);
-                }
-            }
+            // Z 좌표가 거의 같은 아이템들 (바로 아래 레이어)
+            var itemsBelow = pallet.Items
+                .Where(other => Math.Abs(item.Z - other.MaxZ) < EPSILON)
+                .ToList();
 
-            if (itemsBelow == null || itemsBelow.Count == 0)
+            if (itemsBelow.Count == 0)
                 return false; // 공중에 떠 있음
 
             // 지지 면적 계산
@@ -110,26 +103,23 @@ namespace MHAPalletizing.Constraints
             double supportedArea = CalculateSupportedArea(item, itemsBelow);
             double supportRatio = supportedArea / baseArea;
 
-            // 최적화: 가장 쉬운 조건 먼저 체크 (조기 종료)
-            // 75% 지지 + 2개 꼭지점이 가장 일반적이므로 먼저 체크
+            // 3단계 검증
             if (supportRatio >= 0.75)
             {
                 int vertices = CountSupportedVertices(item, itemsBelow, vertexInset);
                 if (vertices >= 2) return true;
             }
 
-            // 50% + 3 vertices
             if (supportRatio >= 0.50)
             {
                 int vertices = CountSupportedVertices(item, itemsBelow, vertexInset);
                 if (vertices >= 3) return true;
             }
 
-            // 40% + 4 vertices (가장 엄격한 조건)
             if (supportRatio >= 0.40)
             {
                 int vertices = CountSupportedVertices(item, itemsBelow, vertexInset);
-                return vertices >= 4;
+                if (vertices >= 4) return true;
             }
 
             return false;

@@ -69,26 +69,16 @@ namespace MHAPalletizing
         /// </example>
         public List<Pallet> Solve(Order order, int maxPallets = 10)
         {
-            Console.WriteLine($"\n=== MHA Algorithm Start ===");
-            Console.WriteLine($"Order: {order}");
-
             var result = new List<Pallet>();
             var remainingItems = new List<Item>(order.Items);
 
-            // Phase 1: Constructive Heuristics (Layer + Block)
-            Console.WriteLine("\n--- Phase 1: Layer & Block Building ---");
+            // Phase 1: Constructive Heuristics (Layer + Block) - 현재 비활성화
             var phase1Pallets = Phase1_ConstructiveHeuristics(remainingItems, maxPallets, out var residuals);
             result.AddRange(phase1Pallets);
-
-            Console.WriteLine($"Phase 1 Complete:");
-            Console.WriteLine($"  Pallets used: {phase1Pallets.Count}");
-            Console.WriteLine($"  Items placed: {phase1Pallets.Sum(p => p.Items.Count)}/{order.Items.Count}");
-            Console.WriteLine($"  Residuals: {residuals.Count}");
 
             // Phase 2: Genetic Algorithm for Residuals
             if (residuals.Any())
             {
-                Console.WriteLine("\n--- Phase 2: Genetic Algorithm for Residuals ---");
                 var remainingPalletCount = maxPallets - phase1Pallets.Count;
                 if (remainingPalletCount > 0)
                 {
@@ -102,28 +92,9 @@ namespace MHAPalletizing
                     if (success)
                     {
                         result.AddRange(phase2Pallets);
-                        Console.WriteLine($"Phase 2 Complete:");
-                        Console.WriteLine($"  Additional pallets: {phase2Pallets.Count}");
-                        Console.WriteLine($"  Residuals placed: {phase2Pallets.Sum(p => p.Items.Count)}/{residuals.Count}");
                     }
-                    else
-                    {
-                        Console.WriteLine($"Phase 2 Failed: Could not place all residuals");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Phase 2 Skipped: No remaining pallets available");
                 }
             }
-
-            // Final Summary
-            Console.WriteLine("\n=== MHA Algorithm Complete ===");
-            Console.WriteLine($"Total pallets used: {result.Count}");
-            Console.WriteLine($"Total items placed: {result.Sum(p => p.Items.Count)}/{order.Items.Count}");
-            if (result.Any())
-                Console.WriteLine($"Average volume utilization: {result.Average(p => p.VolumeUtilization):P2}");
-            Console.WriteLine();
 
             return result;
         }
@@ -145,9 +116,6 @@ namespace MHAPalletizing
             var pallets = new List<Pallet>();
 
             // Phase 1은 현재 비활성화: 모든 아이템을 Phase 2로 전달
-            Console.WriteLine("Phase 1 skipped (LayerBuilder needs optimization)");
-            Console.WriteLine("All items will be processed in Phase 2 GA");
-
             residuals = new List<Item>(items);
             return pallets;
         }
